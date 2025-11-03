@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Building2, MapPin, Clock, Database, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { config } from '@/lib/config';
 
 /**
  * Props for the ZoneManagementPanel component
@@ -98,17 +99,7 @@ export function ZoneManagementPanel({
     onZoneStatusToggle(zone);
   };
 
-  /**
-   * Format zone creation date
-   */
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+
 
   return (
     <div 
@@ -163,7 +154,7 @@ export function ZoneManagementPanel({
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-gray-900">Зоны</h3>
+            <h3 className="font-medium text-gray-900">Кабинеты</h3>
             {zones.length > 0 && (
               <span className="text-xs text-gray-500">{zones.length} всего</span>
             )}
@@ -184,8 +175,8 @@ export function ZoneManagementPanel({
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-gray-900">Выбранная зона</h4>
                 <Badge 
-                  variant={selectedZone.status === 'free' ? 'secondary' : 'default'}
-                  className={selectedZone.status === 'free' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'}
+                  variant="outline"
+                  className={selectedZone.status === 'free' ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500'}
                 >
                   {selectedZone.status === 'free' ? 'Свободна' : 'Занята'}
                 </Badge>
@@ -202,15 +193,9 @@ export function ZoneManagementPanel({
               )}
               
               {/* Zone Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-center p-2 bg-gray-50 rounded">
-                  <div className="font-medium text-gray-900">{selectedZone.vertices.length}</div>
-                  <div className="text-gray-600 text-xs">Вершины</div>
-                </div>
-                <div className="text-center p-2 bg-gray-50 rounded">
-                  <div className="font-medium text-gray-900">Зона {zones.findIndex(z => z.id === selectedZone.id) + 1}</div>
-                  <div className="text-gray-600 text-xs">Позиция</div>
-                </div>
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">Зона {zones.findIndex(z => z.id === selectedZone.id) + 1}</div>
+                <div className="text-gray-600 text-xs">Позиция</div>
               </div>
 
               {/* Action Buttons */}
@@ -224,26 +209,32 @@ export function ZoneManagementPanel({
                   {selectedZone.status === 'free' ? 'Отметить как занятую' : 'Отметить как свободную'}
                 </Button>
                 
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant={isEditModeEnabled ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleZoneEdit(selectedZone)}
-                    className={cn("text-xs", isEditModeEnabled && "bg-amber-600 hover:bg-amber-700 text-white")}
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    {isEditModeEnabled ? 'Выйти из редактирования' : 'Редактировать'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onZoneDelete(selectedZone)}
-                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Удалить
-                  </Button>
-                </div>
+                {(config.features.vertexEditing || config.features.zoneDeletion) && (
+                  <div className={cn("grid gap-2", (config.features.vertexEditing && config.features.zoneDeletion) ? "grid-cols-2" : "grid-cols-1")}>
+                    {config.features.vertexEditing && (
+                    <Button
+                      variant={isEditModeEnabled ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleZoneEdit(selectedZone)}
+                      className={cn("text-xs", isEditModeEnabled && "bg-amber-600 hover:bg-amber-700 text-white")}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      {isEditModeEnabled ? 'Выйти из редактирования' : 'Редактировать'}
+                    </Button>
+                  )}
+                  {config.features.zoneDeletion && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onZoneDelete(selectedZone)}
+                      className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Удалить
+                    </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

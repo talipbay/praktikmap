@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   Zone, 
   ZoneStorage, 
@@ -15,6 +15,7 @@ import {
   findZoneAtPoint 
 } from '@/lib/zoneUtils';
 import { useLocalStorage } from './useLocalStorage';
+import { loadPredefinedZones, shouldLoadPredefinedZones } from '@/lib/zoneLoader';
 
 /**
  * Current version for zone storage format
@@ -199,6 +200,25 @@ export function useZoneState(): UseZoneStateReturn {
     };
     setStorageImmediate(newStorage);
   }, [setStorageImmediate]);
+  
+  // Load predefined zones if storage is empty
+  useEffect(() => {
+    const loadPredefinedZonesIfNeeded = async () => {
+      if (zones.length === 0 && !isLoading && isStorageAvailable) {
+        try {
+          const predefinedZones = await loadPredefinedZones();
+          if (predefinedZones.length > 0) {
+            console.log('Loading predefined zones:', predefinedZones.length);
+            updateStorageImmediate(predefinedZones);
+          }
+        } catch (error) {
+          console.error('Failed to load predefined zones:', error);
+        }
+      }
+    };
+    
+    loadPredefinedZonesIfNeeded();
+  }, [zones.length, isLoading, isStorageAvailable, updateStorageImmediate]);
   
   /**
    * Create a new zone with validation

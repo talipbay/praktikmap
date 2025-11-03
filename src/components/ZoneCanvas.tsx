@@ -6,6 +6,7 @@ import { Point, Zone } from '@/types/zone';
 import { getZoneStyle, calculatePolygonCentroid } from '@/lib/canvasUtils';
 import { isPointInPolygon, validatePolygon, findZoneAtPoint } from '@/lib/zoneUtils';
 import { CanvasRenderManager, debounce, throttle } from '@/lib/canvasPerformance';
+import { config } from '@/lib/config';
 
 /**
  * Props for the ZoneCanvas component
@@ -238,8 +239,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     // Convert to original image coordinates for storage
     const originalPoint = canvasToOriginal(canvasPoint);
 
-    // If we're editing a zone and edit mode is enabled, check for vertex clicks first (use canvas coordinates for UI)
-    if (isEditingZone && editingZoneId && isEditModeEnabled) {
+    // If we're editing a zone and edit mode is enabled and vertex editing is allowed, check for vertex clicks first (use canvas coordinates for UI)
+    if (config.features.vertexEditing && isEditingZone && editingZoneId && isEditModeEnabled) {
       // Convert editing vertices to canvas coordinates for hit testing
       const canvasEditingVertices = originalVerticestoCanvas(editingVertices);
       const vertexIndex = findNearestVertexIndex(canvasPoint, canvasEditingVertices);
@@ -296,14 +297,14 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
       
       setCurrentVertices(newVertices);
       
-    } else if (!isEditingZone) {
-      // Start creating a new zone only if not in edit mode (store in original coordinates)
+    } else if (!isEditingZone && !isEditModeEnabled && config.features.zoneCreation) {
+      // Start creating a new zone only if not in edit mode, edit mode is disabled, and zone creation is enabled (store in original coordinates)
       setIsCreatingZone(true);
       setCurrentVertices([originalPoint]);
     }
 
     onCanvasClick(originalPoint);
-  }, [zones, isCreatingZone, isEditingZone, editingZoneId, editingVertices, onZoneClick, onCanvasClick, isLongPress, isDraggingVertex, isLongPressActive, currentVertices, onZoneCreate, setMousePosition]);
+  }, [zones, isCreatingZone, isEditingZone, editingZoneId, editingVertices, onZoneClick, onCanvasClick, isLongPress, isDraggingVertex, isLongPressActive, currentVertices, onZoneCreate, setMousePosition, isEditModeEnabled]);
 
   /**
    * Handle right-click events and long press (touch)
@@ -344,26 +345,24 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     
     const originalPoint = canvasToOriginal(canvasPoint);
 
-    // Check if we clicked on a vertex of any zone for editing (only if edit mode is enabled)
-    if (isEditModeEnabled) {
-      for (const zone of zones) {
-        const canvasVertices = originalVerticestoCanvas(zone.vertices);
-        const vertexIndex = findNearestVertexIndex(canvasPoint, canvasVertices, 20); // 20px threshold
+    // Check if we clicked on a vertex of the selected zone for editing (only if edit mode is enabled and vertex editing is allowed)
+    if (config.features.vertexEditing && isEditModeEnabled && selectedZone) {
+      const canvasVertices = originalVerticestoCanvas(selectedZone.vertices);
+      const vertexIndex = findNearestVertexIndex(canvasPoint, canvasVertices, 20); // 20px threshold
+      
+      if (vertexIndex !== -1) {
+        // Start vertex dragging
+        setIsEditingZone(true);
+        setEditingZoneId(selectedZone.id);
+        setEditingVertices([...selectedZone.vertices]);
+        setIsDraggingVertex(true);
+        setDraggingVertexIndex(vertexIndex);
+        setDragStartPosition(originalPoint);
+        setIsLongPressActive(true);
         
-        if (vertexIndex !== -1) {
-          // Start vertex dragging
-          setIsEditingZone(true);
-          setEditingZoneId(zone.id);
-          setEditingVertices([...zone.vertices]);
-          setIsDraggingVertex(true);
-          setDraggingVertexIndex(vertexIndex);
-          setDragStartPosition(originalPoint);
-          setIsLongPressActive(true);
-          
-          // Prevent default click behavior
-          e.evt.preventDefault();
-          return;
-        }
+        // Prevent default click behavior
+        e.evt.preventDefault();
+        return;
       }
     }
 
@@ -481,6 +480,11 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
    * Start editing a zone
    */
   const startEditingZone = useCallback((zoneIdOrZone: string | Zone) => {
+    if (!config.features.vertexEditing) {
+      console.warn('Cannot start editing: vertex editing is disabled');
+      return;
+    }
+    
     if (!isEditModeEnabled) {
       console.warn('Cannot start editing: edit mode is disabled');
       return;
@@ -495,12 +499,18 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
       return;
     }
     
+    // Only allow editing of the selected zone
+    if (!selectedZone || zone.id !== selectedZone.id) {
+      console.warn('Cannot edit zone: only the selected zone can be edited');
+      return;
+    }
+    
     setIsEditingZone(true);
     setEditingZoneId(zone.id);
     setEditingVertices([...zone.vertices]); // Create a copy
     setIsCreatingZone(false); // Cancel any zone creation
     setCurrentVertices([]);
-  }, [zones, isEditModeEnabled]);
+  }, [zones, isEditModeEnabled, selectedZone]);
 
   /**
    * Cancel zone editing
@@ -742,8 +752,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
                 listening={false}
               />
               
-              {/* Show draggable vertices for selected zones */}
-              {vertices.map((vertex, index) => (
+              {/* Show draggable vertices for selected zones only when edit mode is enabled and vertex editing is allowed */}
+              {config.features.vertexEditing && isEditModeEnabled && vertices.map((vertex, index) => (
                 <Circle
                   key={`vertex-handle-${index}`}
                   x={vertex.x}
@@ -793,7 +803,7 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
         </React.Fragment>
       );
     });
-  }, [memoizedZones, editingVertices, draggingVertexIndex, onZoneClick, onZoneRightClick, originalVerticestoCanvas]);
+  }, [memoizedZones, editingVertices, draggingVertexIndex, onZoneClick, onZoneRightClick, originalVerticestoCanvas, isEditModeEnabled]);
 
   /**
    * Effect to cancel editing when edit mode is disabled
@@ -875,8 +885,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
         }
       }
       
-      // Zone deletion shortcuts
-      else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedZone && !isCreatingZone && !isEditingZone) {
+      // Zone deletion shortcuts (only if deletion is enabled)
+      else if (config.features.zoneDeletion && (e.key === 'Delete' || e.key === 'Backspace') && selectedZone && !isCreatingZone && !isEditingZone) {
         if (onZoneDelete) {
           // Show confirmation and delete zone
           const confirmed = window.confirm(`Are you sure you want to delete this zone${selectedZone.companyName ? ` occupied by ${selectedZone.companyName}` : ''}?`);
@@ -904,8 +914,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
         }
       }
       
-      // Edit mode shortcut (only if edit mode is enabled)
-      else if (e.key === 'e' && selectedZone && !isCreatingZone && !isEditingZone && !e.ctrlKey && !e.metaKey && isEditModeEnabled) {
+      // Edit mode shortcut (only if edit mode is enabled and vertex editing is allowed)
+      else if (config.features.vertexEditing && e.key === 'e' && selectedZone && !isCreatingZone && !isEditingZone && !e.ctrlKey && !e.metaKey && isEditModeEnabled) {
         startEditingZone(selectedZone);
       }
       
@@ -1095,7 +1105,7 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
       )}
       
       {/* Zone editing instructions */}
-      {isEditingZone && isEditModeEnabled && (
+      {config.features.vertexEditing && isEditingZone && isEditModeEnabled && (
         <div 
           id="canvas-instructions"
           className="zone-instructions absolute top-4 left-4 bg-amber-100 border border-amber-300 rounded-lg p-3 shadow-lg md:relative md:top-auto md:left-auto md:transform-none"
@@ -1112,21 +1122,22 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
           <p className="text-gray-500 text-xs">Click "Exit Edit Mode" button to finish editing</p>
         </div>
       )}
-      
-      {/* Edit mode disabled message */}
-      {!isEditModeEnabled && selectedZone && (
+
+      {/* Edit mode active but not editing message */}
+      {config.features.vertexEditing && isEditModeEnabled && !isEditingZone && !isCreatingZone && (
         <div 
-          className="zone-instructions absolute top-4 right-4 bg-blue-100 border border-blue-300 rounded-lg p-3 shadow-lg"
+          className="zone-instructions absolute bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-lg"
           role="status"
           aria-live="polite"
         >
-          <p className="text-blue-800 text-sm font-medium">Zone Selected</p>
-          <p className="text-blue-600 text-xs mt-1">
-            Click "Edit" button in the panel to enable zone editing
+          <p className="text-amber-800 text-sm font-medium">Edit Mode Active</p>
+          <p className="text-amber-600 text-xs mt-1">
+            Zone creation is disabled. Select a zone to edit or exit edit mode to create new zones.
           </p>
         </div>
       )}
-      
+
+
 
     </div>
   );

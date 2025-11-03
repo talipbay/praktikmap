@@ -95,17 +95,7 @@ function DeleteConfirmationDialog({
               </div>
             )}
             
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Vertices:</span>
-              <span className="font-medium">{zone.vertices.length}</span>
-            </div>
-            
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Created:</span>
-              <span className="font-medium">
-                {new Date(zone.createdAt).toLocaleDateString()}
-              </span>
-            </div>
+
           </div>
         </div>
 
@@ -223,7 +213,7 @@ export function ZoneActions({
           onClick={handleEdit}
           disabled={isProcessing}
           className={buttonClass}
-          aria-label={`Edit zone with ${zone.vertices.length} vertices`}
+          aria-label="Edit zone"
         >
           <Edit className="h-4 w-4 mr-2" aria-hidden="true" />
           Edit Zone

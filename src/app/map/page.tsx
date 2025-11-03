@@ -11,6 +11,7 @@ import { LoadingSpinner, CanvasLoading } from '@/components/LoadingSpinner';
 import { BrowserCompatibility } from '@/components/BrowserCompatibility';
 import { useZoneState } from '@/hooks/useZoneState';
 import { Point, Zone } from '@/types/zone';
+import { config } from '@/lib/config';
 
 /**
  * Map page component - Main admin interface for zone management
@@ -399,7 +400,10 @@ export default function MapPage() {
                   <div>
                     <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-900`}>План этажа</h2>
                     <p className="text-sm text-gray-600 mt-1">
-                      {isMobile ? 'Нажмите на желаемое место чтобы создать метку • Долгое нажатие для опций' : 'Нажмите ЛКМ чтобы создать метку • ПКМ чтобы посмотреть опции'}
+                      {config.features.zoneCreation 
+                        ? (isMobile ? 'Нажмите на желаемое место чтобы создать метку • Долгое нажатие для опций' : 'Нажмите ЛКМ чтобы создать метку • ПКМ чтобы посмотреть опции')
+                        : (isMobile ? 'Нажмите на зону для управления • Долгое нажатие для опций' : 'Нажмите ЛКМ на зону для управления • ПКМ для опций')
+                      }
                     </p>
                   </div>
                   <div className={`flex items-center ${isMobile ? 'justify-between' : 'gap-4'}`}>
@@ -407,7 +411,7 @@ export default function MapPage() {
                       {zones.length} зон • {zones.filter(z => z.status === 'occupied').length} занято
                     </div>
                     {/* Quick actions */}
-                    {process.env.NODE_ENV === 'development' && zones.length === 0 && (
+                    {process.env.NODE_ENV === 'development' && zones.length === 0 && !isEditModeEnabled && config.features.zoneCreation && (
                       <button
                         onClick={() => {
                           // Test vertices in original image coordinates (1920x1080)

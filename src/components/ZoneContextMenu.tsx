@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { Zone } from '@/types/zone';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, ToggleLeft, ToggleRight, Building2 } from 'lucide-react';
+import { config } from '@/lib/config';
 
 /**
  * Props for the ZoneContextMenu component
@@ -107,7 +108,7 @@ export function ZoneContextMenu({
       {/* Zone info header */}
       <div className="px-3 py-2 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-full ${zone.status === 'occupied' ? 'bg-red-500' : 'bg-gray-300'}`} />
+          <div className={`w-3 h-3 rounded-full ${zone.status === 'occupied' ? 'bg-red-500' : 'bg-green-500'}`} />
           <span className="text-sm font-medium text-gray-900">
             {zone.status === 'occupied' ? 'Занятая зона' : 'Свободная зона'}
           </span>
@@ -144,31 +145,35 @@ export function ZoneContextMenu({
           )}
         </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start px-3 py-2 h-auto text-left"
-          onClick={() => {
-            onEdit(zone);
-            onClose();
-          }}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Редактировать зону
-        </Button>
+        {config.features.vertexEditing && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start px-3 py-2 h-auto text-left"
+            onClick={() => {
+              onEdit(zone);
+              onClose();
+            }}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Редактировать зону
+          </Button>
+        )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start px-3 py-2 h-auto text-left text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={() => {
-            onDelete(zone);
-            onClose();
-          }}
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Удалить зону
-        </Button>
+        {config.features.zoneDeletion && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start px-3 py-2 h-auto text-left text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => {
+              onDelete(zone);
+              onClose();
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Удалить зону
+          </Button>
+        )}
       </div>
     </div>
   );

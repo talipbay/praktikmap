@@ -32,16 +32,16 @@ export function ZoneList({
   className
 }: ZoneListProps) {
   /**
-   * Get badge variant based on zone status
+   * Get badge styling based on zone status
    */
-  const getStatusBadgeVariant = (status: ZoneStatus) => {
+  const getStatusBadgeClass = (status: ZoneStatus) => {
     switch (status) {
       case 'free':
-        return 'secondary';
+        return 'bg-green-500 text-white border-green-500';
       case 'occupied':
-        return 'default';
+        return 'bg-red-500 text-white border-red-500';
       default:
-        return 'outline';
+        return 'bg-gray-500 text-white border-gray-500';
     }
   };
 
@@ -59,23 +59,13 @@ export function ZoneList({
     }
   };
 
-  /**
-   * Format zone creation date
-   */
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+
 
   /**
    * Generate zone display name
    */
   const getZoneDisplayName = (zone: Zone, index: number) => {
-    return `Зона ${index + 1}`;
+    return `Кабинет ${index + 1}`;
   };
 
   if (zones.length === 0) {
@@ -128,7 +118,8 @@ export function ZoneList({
                       {getZoneDisplayName(zone, index)}
                     </CardTitle>
                     <Badge 
-                      variant={getStatusBadgeVariant(zone.status)}
+                      variant="outline"
+                      className={getStatusBadgeClass(zone.status)}
                       aria-label={`Status: ${getStatusText(zone.status)}`}
                     >
                       {getStatusText(zone.status)}
@@ -147,25 +138,7 @@ export function ZoneList({
                     </div>
                   )}
                   
-                  {/* Zone details */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs text-muted-foreground">
-                      <span>Вершины</span>
-                      <span>{zone.vertices.length}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-xs text-muted-foreground">
-                      <span>Создана</span>
-                      <span>{formatDate(zone.createdAt)}</span>
-                    </div>
-                    
-                    {zone.updatedAt !== zone.createdAt && (
-                      <div className="flex justify-between items-center text-xs text-muted-foreground">
-                        <span>Обновлена</span>
-                        <span>{formatDate(zone.updatedAt)}</span>
-                      </div>
-                    )}
-                  </div>
+
                 </CardContent>
               </Card>
             );

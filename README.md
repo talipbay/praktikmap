@@ -1,4 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Interactive Zone Manager
+
+A Next.js application for managing office zones with interactive floor plan editing capabilities.
+
+## Features
+
+- **Interactive Floor Plan**: Visual zone management on a floor plan image
+- **Zone Status Management**: Toggle zones between free (green) and occupied (red)
+- **Company Assignment**: Assign company names to occupied zones
+- **Configurable Editing**: Enable/disable vertex editing and zone deletion via environment variables
+- **Predefined Zones**: 44 pre-configured room zones with optimized coordinates
+
+## Configuration
+
+The application behavior can be controlled via environment variables:
+
+1. **Copy the example environment file:**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Configure features in `.env.local`:**
+   ```bash
+   # Enable/disable vertex editing (reshaping zones)
+   NEXT_PUBLIC_ENABLE_VERTEX_EDITING=false
+   
+   # Enable/disable zone deletion
+   NEXT_PUBLIC_ENABLE_ZONE_DELETION=false
+   
+   # Enable/disable zone creation
+   NEXT_PUBLIC_ENABLE_ZONE_CREATION=false
+   ```
+
+3. **Available combinations:**
+   - All `false`: Production safe - only status management
+   - Creation `true`, others `false`: Allow creating zones only
+   - Vertex `true`, others `false`: Allow reshaping existing zones only
+   - Deletion `true`, others `false`: Allow removing zones only
+   - All `true`: Full editing capabilities
+
+See `VERTEX_EDITING_CONFIG.md` for detailed configuration options.
 
 ## Getting Started
 
@@ -14,9 +54,9 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000/map](http://localhost:3000/map) with your browser to access the zone management interface.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The application will automatically load 44 predefined room zones on first visit.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
