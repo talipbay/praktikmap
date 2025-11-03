@@ -58,6 +58,16 @@ Open [http://localhost:3000/map](http://localhost:3000/map) with your browser to
 
 The application will automatically load 44 predefined room zones on first visit.
 
+## Deployment
+
+This project is configured for easy deployment to GitHub Pages:
+
+1. **Push to GitHub**: `git push origin main`
+2. **Enable GitHub Pages**: Go to Settings → Pages → Source: GitHub Actions
+3. **Access your site**: `https://[username].github.io/praktikoffice/map/`
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

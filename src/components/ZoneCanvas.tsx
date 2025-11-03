@@ -1034,7 +1034,7 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
         onTouchStart={handlePointerDown}
         onTouchEnd={handlePointerUp}
         tabIndex={0}
-        onError={(error) => {
+        onError={(error: any) => {
           console.error('Konva Stage error:', error);
         }}
       >
