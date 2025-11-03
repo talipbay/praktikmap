@@ -12,6 +12,7 @@ import { BrowserCompatibility } from '@/components/BrowserCompatibility';
 import { useZoneState } from '@/hooks/useZoneState';
 import { Point, Zone } from '@/types/zone';
 import { config } from '@/lib/config';
+import { getFloorPlanUrl } from '@/lib/assets';
 
 /**
  * Map page component - Main admin interface for zone management
@@ -52,7 +53,7 @@ export default function MapPage() {
   const [floorPlanError, setFloorPlanError] = useState<string | null>(null);
 
   // Floor plan configuration
-  const floorPlanUrl = '/f.png';
+  const floorPlanUrl = getFloorPlanUrl();
   
   // Responsive canvas dimensions (default for 1920x1080 aspect ratio)
   const [canvasDimensions, setCanvasDimensions] = useState({

@@ -199,7 +199,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     };
     
     img.onerror = () => {
-      setImageError('Failed to load floor plan image');
+      console.error('Failed to load floor plan image from:', floorPlanUrl);
+      setImageError(`Failed to load floor plan image from: ${floorPlanUrl}`);
       setImageLoaded(false);
     };
     
