@@ -37,6 +37,8 @@ export interface ZoneManagementPanelProps {
   onZonesClear: () => void;
   /** Callback when zones are restored from backup */
   onZonesRestore: (zones: Zone[]) => void;
+  /** Whether edit mode is enabled */
+  isEditModeEnabled?: boolean;
   /** Optional className for styling */
   className?: string;
 }
@@ -56,6 +58,7 @@ export function ZoneManagementPanel({
   onZonesImport,
   onZonesClear,
   onZonesRestore,
+  isEditModeEnabled = false,
   className
 }: ZoneManagementPanelProps) {
   // Debug logging
@@ -223,13 +226,13 @@ export function ZoneManagementPanel({
                 
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    variant="outline"
+                    variant={isEditModeEnabled ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleZoneEdit(selectedZone)}
-                    className="text-xs"
+                    className={cn("text-xs", isEditModeEnabled && "bg-amber-600 hover:bg-amber-700 text-white")}
                   >
                     <Edit className="h-3 w-3 mr-1" />
-                    Редактировать
+                    {isEditModeEnabled ? 'Выйти из редактирования' : 'Редактировать'}
                   </Button>
                   <Button
                     variant="outline"

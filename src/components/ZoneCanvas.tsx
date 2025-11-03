@@ -35,6 +35,8 @@ export interface ZoneCanvasProps {
   width?: number;
   /** Canvas height */
   height?: number;
+  /** Whether edit mode is enabled */
+  isEditModeEnabled?: boolean;
 }
 
 /**
@@ -72,7 +74,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
   onStartEdit,
   onZoneDelete,
   width = 800,
-  height = 600
+  height = 600,
+  isEditModeEnabled = false
 }, ref) => {
   // Ensure valid dimensions
   const safeWidth = Math.max(width || 800, 100);
@@ -235,8 +238,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     // Convert to original image coordinates for storage
     const originalPoint = canvasToOriginal(canvasPoint);
 
-    // If we're editing a zone, check for vertex clicks first (use canvas coordinates for UI)
-    if (isEditingZone && editingZoneId) {
+    // If we're editing a zone and edit mode is enabled, check for vertex clicks first (use canvas coordinates for UI)
+    if (isEditingZone && editingZoneId && isEditModeEnabled) {
       // Convert editing vertices to canvas coordinates for hit testing
       const canvasEditingVertices = originalVerticestoCanvas(editingVertices);
       const vertexIndex = findNearestVertexIndex(canvasPoint, canvasEditingVertices);
@@ -341,24 +344,26 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     
     const originalPoint = canvasToOriginal(canvasPoint);
 
-    // Check if we clicked on a vertex of any zone for editing
-    for (const zone of zones) {
-      const canvasVertices = originalVerticestoCanvas(zone.vertices);
-      const vertexIndex = findNearestVertexIndex(canvasPoint, canvasVertices, 20); // 20px threshold
-      
-      if (vertexIndex !== -1) {
-        // Start vertex dragging
-        setIsEditingZone(true);
-        setEditingZoneId(zone.id);
-        setEditingVertices([...zone.vertices]);
-        setIsDraggingVertex(true);
-        setDraggingVertexIndex(vertexIndex);
-        setDragStartPosition(originalPoint);
-        setIsLongPressActive(true);
+    // Check if we clicked on a vertex of any zone for editing (only if edit mode is enabled)
+    if (isEditModeEnabled) {
+      for (const zone of zones) {
+        const canvasVertices = originalVerticestoCanvas(zone.vertices);
+        const vertexIndex = findNearestVertexIndex(canvasPoint, canvasVertices, 20); // 20px threshold
         
-        // Prevent default click behavior
-        e.evt.preventDefault();
-        return;
+        if (vertexIndex !== -1) {
+          // Start vertex dragging
+          setIsEditingZone(true);
+          setEditingZoneId(zone.id);
+          setEditingVertices([...zone.vertices]);
+          setIsDraggingVertex(true);
+          setDraggingVertexIndex(vertexIndex);
+          setDragStartPosition(originalPoint);
+          setIsLongPressActive(true);
+          
+          // Prevent default click behavior
+          e.evt.preventDefault();
+          return;
+        }
       }
     }
 
@@ -476,6 +481,11 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
    * Start editing a zone
    */
   const startEditingZone = useCallback((zoneIdOrZone: string | Zone) => {
+    if (!isEditModeEnabled) {
+      console.warn('Cannot start editing: edit mode is disabled');
+      return;
+    }
+    
     const zone = typeof zoneIdOrZone === 'string' 
       ? zones.find(z => z.id === zoneIdOrZone)
       : zoneIdOrZone;
@@ -490,7 +500,7 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     setEditingVertices([...zone.vertices]); // Create a copy
     setIsCreatingZone(false); // Cancel any zone creation
     setCurrentVertices([]);
-  }, [zones]);
+  }, [zones, isEditModeEnabled]);
 
   /**
    * Cancel zone editing
@@ -786,6 +796,15 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
   }, [memoizedZones, editingVertices, draggingVertexIndex, onZoneClick, onZoneRightClick, originalVerticestoCanvas]);
 
   /**
+   * Effect to cancel editing when edit mode is disabled
+   */
+  useEffect(() => {
+    if (!isEditModeEnabled && isEditingZone) {
+      cancelZoneEditing();
+    }
+  }, [isEditModeEnabled, isEditingZone, cancelZoneEditing]);
+
+  /**
    * Performance monitoring effect
    */
   useEffect(() => {
@@ -885,8 +904,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
         }
       }
       
-      // Edit mode shortcut
-      else if (e.key === 'e' && selectedZone && !isCreatingZone && !isEditingZone && !e.ctrlKey && !e.metaKey) {
+      // Edit mode shortcut (only if edit mode is enabled)
+      else if (e.key === 'e' && selectedZone && !isCreatingZone && !isEditingZone && !e.ctrlKey && !e.metaKey && isEditModeEnabled) {
         startEditingZone(selectedZone);
       }
       
@@ -910,7 +929,8 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
     onZoneClick, 
     onZoneRightClick, 
     onZoneDelete,
-    startEditingZone
+    startEditingZone,
+    isEditModeEnabled
   ]);
 
 
@@ -1075,7 +1095,7 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
       )}
       
       {/* Zone editing instructions */}
-      {isEditingZone && (
+      {isEditingZone && isEditModeEnabled && (
         <div 
           id="canvas-instructions"
           className="zone-instructions absolute top-4 left-4 bg-amber-100 border border-amber-300 rounded-lg p-3 shadow-lg md:relative md:top-auto md:left-auto md:transform-none"
@@ -1089,7 +1109,21 @@ export const ZoneCanvas = React.forwardRef<ZoneCanvasRef, ZoneCanvasProps>(({
           <p className="text-green-600 text-xs">
             Changes save automatically when you release
           </p>
-          <p className="text-gray-500 text-xs">Click elsewhere to exit edit mode</p>
+          <p className="text-gray-500 text-xs">Click "Exit Edit Mode" button to finish editing</p>
+        </div>
+      )}
+      
+      {/* Edit mode disabled message */}
+      {!isEditModeEnabled && selectedZone && (
+        <div 
+          className="zone-instructions absolute top-4 right-4 bg-blue-100 border border-blue-300 rounded-lg p-3 shadow-lg"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-blue-800 text-sm font-medium">Zone Selected</p>
+          <p className="text-blue-600 text-xs mt-1">
+            Click "Edit" button in the panel to enable zone editing
+          </p>
         </div>
       )}
       

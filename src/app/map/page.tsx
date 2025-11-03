@@ -33,6 +33,9 @@ export default function MapPage() {
   // Canvas ref for controlling edit mode
   const canvasRef = useRef<ZoneCanvasRef>(null);
 
+  // Edit mode state
+  const [isEditModeEnabled, setIsEditModeEnabled] = useState(false);
+
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
     zone: Zone;
@@ -196,15 +199,21 @@ export default function MapPage() {
   }, [updateZone]);
 
   /**
-   * Handle zone edit request
+   * Handle zone edit request - toggle edit mode
    */
   const handleZoneEdit = useCallback((zone: Zone) => {
     setSelectedZone(zone);
-    // Start edit mode in canvas
-    if (canvasRef.current) {
+    // Toggle edit mode
+    setIsEditModeEnabled(!isEditModeEnabled);
+    
+    // If enabling edit mode, start editing the zone
+    if (!isEditModeEnabled && canvasRef.current) {
       canvasRef.current.startEditingZone(zone.id);
+    } else if (isEditModeEnabled && canvasRef.current) {
+      // If disabling edit mode, cancel editing
+      canvasRef.current.cancelZoneEditing();
     }
-  }, [setSelectedZone]);
+  }, [setSelectedZone, isEditModeEnabled]);
 
   /**
    * Handle zone deletion
@@ -470,6 +479,7 @@ export default function MapPage() {
                         onZoneDelete={handleZoneDelete}
                         width={canvasDimensions.width}
                         height={canvasDimensions.height}
+                        isEditModeEnabled={isEditModeEnabled}
                       />
                     </div>
                   </ErrorBoundary>
@@ -513,6 +523,7 @@ export default function MapPage() {
                     onZonesImport={handleZonesImport}
                     onZonesClear={handleZonesClear}
                     onZonesRestore={handleZonesRestore}
+                    isEditModeEnabled={isEditModeEnabled}
                   />
                 </ErrorBoundary>
               </div>
