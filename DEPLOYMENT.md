@@ -27,8 +27,10 @@ The project is configured for automatic deployment using GitHub Actions.
 
 ### What Happens Automatically:
 
-- ✅ Builds the Next.js app as static files
+- ✅ Builds the Next.js app as static files with caching for faster rebuilds
 - ✅ Configures safe production settings (all editing disabled)
+- ✅ Handles asset paths correctly for GitHub Pages base path
+- ✅ Copies floor plan image and zone data to deployment
 - ✅ Deploys to GitHub Pages
 - ✅ Updates on every push to main branch
 
@@ -88,8 +90,9 @@ praktikoffice/
 - Verify the site URL format: `https://[username].github.io/praktikoffice/`
 
 ### Assets Not Loading
-- The app is configured with the correct base path for GitHub Pages
-- Images and zone data are automatically copied to the `out` directory
+- **Floor plan image**: The app automatically handles GitHub Pages base path (`/praktikoffice/`)
+- **Images and data**: All assets are automatically copied to the `out` directory
+- **Debug**: Check browser console for asset loading errors and paths
 
 ## 🔄 Updates
 
