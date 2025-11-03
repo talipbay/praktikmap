@@ -77,6 +77,7 @@ praktikoffice/
 ## 🛠️ Troubleshooting
 
 ### Build Fails
+- **Node.js Version**: Ensure you're using Node.js >=20.9.0 (required for Next.js 16)
 - Check that all dependencies are installed: `npm ci`
 - Verify TypeScript compilation: `npm run build`
 - Check the Actions tab in GitHub for detailed error logs
@@ -107,8 +108,25 @@ The static files in the `out` directory can be deployed to:
 
 ## 📋 Pre-deployment Checklist
 
+- ✅ **Node.js >=20.9.0** installed locally and in CI
 - ✅ All features working in development
 - ✅ Build completes without errors
 - ✅ Environment variables configured
 - ✅ GitHub repository is public (for free GitHub Pages)
 - ✅ GitHub Actions enabled in repository settings
+
+## 💻 Local Development Requirements
+
+- **Node.js**: Version 20.9.0 or higher
+- **npm**: Latest version (comes with Node.js)
+
+Check your version:
+```bash
+node --version  # Should be >=20.9.0
+npm --version   # Should be latest
+```
+
+If you need to upgrade Node.js:
+- **Using nvm**: `nvm install 20 && nvm use 20`
+- **Direct download**: https://nodejs.org/
+- **Using package manager**: `brew install node` (macOS) or equivalent
