@@ -1,0 +1,253 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Zone } from '@/types/zone';
+import { ZoneList } from './ZoneList';
+
+import { ZoneActions } from './ZoneActions';
+import { DataManagement } from './DataManagement';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Building2, MapPin, Clock, Database, Edit, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+/**
+ * Props for the ZoneManagementPanel component
+ */
+export interface ZoneManagementPanelProps {
+  /** Array of zones to display and manage */
+  zones: Zone[];
+  /** Currently selected zone */
+  selectedZone: Zone | null;
+  /** Callback when a zone is selected */
+  onZoneSelect: (zone: Zone) => void;
+  /** Callback when a zone's company name is updated */
+  onCompanyNameUpdate: (zoneId: string, companyName: string) => void;
+  /** Callback when a zone is edited */
+  onZoneEdit: (zone: Zone) => void;
+  /** Callback when a zone is deleted */
+  onZoneDelete: (zone: Zone) => void;
+  /** Callback when zone status is toggled */
+  onZoneStatusToggle: (zone: Zone) => void;
+  /** Callback when zones are imported */
+  onZonesImport: (zones: Zone[]) => void;
+  /** Callback when all zones are cleared */
+  onZonesClear: () => void;
+  /** Callback when zones are restored from backup */
+  onZonesRestore: (zones: Zone[]) => void;
+  /** Optional className for styling */
+  className?: string;
+}
+
+/**
+ * Main zone management panel component that provides a comprehensive interface
+ * for managing zones including list view, company name input, and zone actions
+ */
+export function ZoneManagementPanel({
+  zones,
+  selectedZone,
+  onZoneSelect,
+  onCompanyNameUpdate,
+  onZoneEdit,
+  onZoneDelete,
+  onZoneStatusToggle,
+  onZonesImport,
+  onZonesClear,
+  onZonesRestore,
+  className
+}: ZoneManagementPanelProps) {
+  // Debug logging
+  React.useEffect(() => {
+    console.log('ZoneManagementPanel rendered with:', {
+      zonesCount: zones.length,
+      selectedZoneId: selectedZone?.id,
+      className
+    });
+  }, [zones.length, selectedZone?.id, className]);
+  const [showDataManagement, setShowDataManagement] = useState(false);
+
+  /**
+   * Get zone statistics
+   */
+  const zoneStats = {
+    total: zones.length,
+    free: zones.filter(z => z.status === 'free').length,
+    occupied: zones.filter(z => z.status === 'occupied').length
+  };
+
+
+
+  /**
+   * Handle zone edit request
+   */
+  const handleZoneEdit = (zone: Zone) => {
+    // Always trigger vertex editing mode
+    onZoneEdit(zone);
+  };
+
+  /**
+   * Handle zone status toggle
+   */
+  const handleStatusToggle = (zone: Zone) => {
+    // Use the shared status toggle handler from parent
+    onZoneStatusToggle(zone);
+  };
+
+  /**
+   * Format zone creation date
+   */
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div 
+      className={cn("flex flex-col h-full bg-white", className)}
+      role="complementary"
+      aria-label="Zone management panel"
+    >
+      {/* Statistics Overview - Fixed at top */}
+      <div className="p-6 border-b border-gray-100">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-gray-900">{zoneStats.total}</div>
+            <div className="text-sm text-gray-600">Всего зон</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-600">{zoneStats.occupied}</div>
+            <div className="text-sm text-gray-600">Занято</div>
+          </div>
+        </div>
+        
+        {/* Quick Actions Row */}
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDataManagement(!showDataManagement)}
+            className="flex-1"
+          >
+            <Database className="h-4 w-4 mr-2" />
+            {showDataManagement ? 'Скрыть данные' : 'Управление данными'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Data Management Section - Collapsible */}
+      {showDataManagement && (
+        <div className="border-b border-gray-100 bg-gray-50">
+          <div className="p-4">
+            <DataManagement
+              zones={zones}
+              onImport={onZonesImport}
+              onClearAll={onZonesClear}
+              onRestore={onZonesRestore}
+            />
+          </div>
+        </div>
+      )}
+
+
+
+      {/* Zone List - Main scrollable area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-gray-900">Зоны</h3>
+            {zones.length > 0 && (
+              <span className="text-xs text-gray-500">{zones.length} всего</span>
+            )}
+          </div>
+          <ZoneList
+            zones={zones}
+            selectedZone={selectedZone}
+            onZoneSelect={onZoneSelect}
+          />
+        </div>
+      </div>   
+      {/* Selected Zone Details - Fixed at bottom */}
+      {selectedZone && (
+        <div className="border-t border-gray-200 bg-white">
+          <div className="p-4">
+            <div className="space-y-4">
+              {/* Zone Header */}
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-gray-900">Выбранная зона</h4>
+                <Badge 
+                  variant={selectedZone.status === 'free' ? 'secondary' : 'default'}
+                  className={selectedZone.status === 'free' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'}
+                >
+                  {selectedZone.status === 'free' ? 'Свободна' : 'Занята'}
+                </Badge>
+              </div>
+              
+              {/* Company name for occupied zones */}
+              {selectedZone.status === 'occupied' && selectedZone.companyName && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-blue-900">{selectedZone.companyName}</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Zone Info */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="text-center p-2 bg-gray-50 rounded">
+                  <div className="font-medium text-gray-900">{selectedZone.vertices.length}</div>
+                  <div className="text-gray-600 text-xs">Вершины</div>
+                </div>
+                <div className="text-center p-2 bg-gray-50 rounded">
+                  <div className="font-medium text-gray-900">Зона {zones.findIndex(z => z.id === selectedZone.id) + 1}</div>
+                  <div className="text-gray-600 text-xs">Позиция</div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <Button
+                  variant={selectedZone.status === 'free' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleStatusToggle(selectedZone)}
+                  className="w-full"
+                >
+                  {selectedZone.status === 'free' ? 'Отметить как занятую' : 'Отметить как свободную'}
+                </Button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleZoneEdit(selectedZone)}
+                    className="text-xs"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Редактировать
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onZoneDelete(selectedZone)}
+                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+    </div>
+  );
+}
