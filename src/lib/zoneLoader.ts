@@ -1,4 +1,5 @@
 import { Zone } from '@/types/zone';
+import { getAssetPath } from './assets';
 
 /**
  * Load predefined zones from the cleaned JSON file
@@ -6,12 +7,16 @@ import { Zone } from '@/types/zone';
  */
 export async function loadPredefinedZones(): Promise<Zone[]> {
   try {
-    const response = await fetch('/zones-cleaned.json');
+    const zonesUrl = getAssetPath('/zones-cleaned.json');
+    console.log('Loading predefined zones from:', zonesUrl);
+    
+    const response = await fetch(zonesUrl);
     if (!response.ok) {
-      throw new Error('Failed to load zones');
+      throw new Error(`Failed to load zones: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('Loaded predefined zones:', data.zones?.length || 0, 'zones');
     return data.zones || [];
   } catch (error) {
     console.error('Error loading predefined zones:', error);
