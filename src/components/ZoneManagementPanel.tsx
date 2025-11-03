@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Building2, MapPin, Clock, Database, Edit, Trash2 } from 'lucide-react';
+import { Building2, MapPin, Clock, Database, Edit, Trash2, Github, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { config } from '@/lib/config';
+import { GitHubTokenDialog } from './GitHubTokenDialog';
 
 /**
  * Props for the ZoneManagementPanel component
@@ -40,6 +41,11 @@ export interface ZoneManagementPanelProps {
   onZonesRestore: (zones: Zone[]) => void;
   /** Whether edit mode is enabled */
   isEditModeEnabled?: boolean;
+  /** GitHub storage methods */
+  setGitHubToken?: (token: string) => void;
+  hasGitHubToken?: () => boolean;
+  saveToGitHub?: () => Promise<boolean>;
+  loadFromGitHub?: () => Promise<boolean>;
   /** Optional className for styling */
   className?: string;
 }
@@ -60,6 +66,10 @@ export function ZoneManagementPanel({
   onZonesClear,
   onZonesRestore,
   isEditModeEnabled = false,
+  setGitHubToken,
+  hasGitHubToken,
+  saveToGitHub,
+  loadFromGitHub,
   className
 }: ZoneManagementPanelProps) {
   // Debug logging
@@ -71,6 +81,8 @@ export function ZoneManagementPanel({
     });
   }, [zones.length, selectedZone?.id, className]);
   const [showDataManagement, setShowDataManagement] = useState(false);
+  const [showGitHubTokenDialog, setShowGitHubTokenDialog] = useState(false);
+  const [isGitHubSaving, setIsGitHubSaving] = useState(false);
 
   /**
    * Get zone statistics
@@ -99,6 +111,61 @@ export function ZoneManagementPanel({
     onZoneStatusToggle(zone);
   };
 
+  /**
+   * Handle GitHub token submission
+   */
+  const handleGitHubTokenSubmit = (token: string) => {
+    if (setGitHubToken) {
+      setGitHubToken(token);
+    }
+  };
+
+  /**
+   * Handle save to GitHub
+   */
+  const handleSaveToGitHub = async () => {
+    if (!saveToGitHub) return;
+    
+    if (!hasGitHubToken || !hasGitHubToken()) {
+      setShowGitHubTokenDialog(true);
+      return;
+    }
+
+    setIsGitHubSaving(true);
+    try {
+      const success = await saveToGitHub();
+      if (success) {
+        alert('Zones successfully saved to GitHub!');
+      } else {
+        alert('Failed to save zones to GitHub. Check console for details.');
+      }
+    } finally {
+      setIsGitHubSaving(false);
+    }
+  };
+
+  /**
+   * Handle load from GitHub
+   */
+  const handleLoadFromGitHub = async () => {
+    if (!loadFromGitHub) return;
+    
+    const confirmed = confirm('This will replace all current zones with data from GitHub. Continue?');
+    if (!confirmed) return;
+
+    try {
+      const success = await loadFromGitHub();
+      if (success) {
+        alert('Zones successfully loaded from GitHub!');
+      } else {
+        alert('Failed to load zones from GitHub. Check console for details.');
+      }
+    } catch (error) {
+      console.error('Error loading from GitHub:', error);
+      alert('Error loading from GitHub. Check console for details.');
+    }
+  };
+
 
 
   return (
@@ -121,16 +188,39 @@ export function ZoneManagementPanel({
         </div>
         
         {/* Quick Actions Row */}
-        <div className="flex gap-2 mt-4">
+        <div className="space-y-2 mt-4">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowDataManagement(!showDataManagement)}
-            className="flex-1"
+            className="w-full"
           >
             <Database className="h-4 w-4 mr-2" />
             {showDataManagement ? 'Скрыть данные' : 'Управление данными'}
           </Button>
+          
+          {/* GitHub Storage Actions */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveToGitHub}
+              disabled={isGitHubSaving}
+              className="text-xs"
+            >
+              <Cloud className="h-3 w-3 mr-1" />
+              {isGitHubSaving ? 'Сохранение...' : 'Сохранить на сервер'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLoadFromGitHub}
+              className="text-xs"
+            >
+              <Github className="h-3 w-3 mr-1" />
+              Загрузить с сервера
+            </Button>
+          </div>
         </div>
       </div>
 

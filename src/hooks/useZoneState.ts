@@ -16,6 +16,7 @@ import {
 } from '@/lib/zoneUtils';
 import { useLocalStorage } from './useLocalStorage';
 import { loadPredefinedZones, shouldLoadPredefinedZones } from '@/lib/zoneLoader';
+import { githubStorage } from '@/lib/githubStorage';
 
 /**
  * Current version for zone storage format
@@ -73,6 +74,16 @@ export interface UseZoneStateReturn {
     free: number;
     occupied: number;
   };
+  
+  // GitHub Storage
+  /** Set GitHub token for server storage */
+  setGitHubToken: (token: string) => void;
+  /** Check if GitHub token is set */
+  hasGitHubToken: () => boolean;
+  /** Save zones to GitHub (requires token) */
+  saveToGitHub: () => Promise<boolean>;
+  /** Load zones from GitHub */
+  loadFromGitHub: () => Promise<boolean>;
 }
 
 /**
@@ -415,6 +426,40 @@ export function useZoneState(): UseZoneStateReturn {
     free: zones.filter(z => z.status === 'free').length,
     occupied: zones.filter(z => z.status === 'occupied').length
   }), [zones]);
+
+  /**
+   * GitHub Storage Methods
+   */
+  const setGitHubToken = useCallback((token: string) => {
+    githubStorage.setToken(token);
+  }, []);
+
+  const hasGitHubToken = useCallback(() => {
+    return githubStorage.hasToken();
+  }, []);
+
+  const saveToGitHub = useCallback(async (): Promise<boolean> => {
+    try {
+      return await githubStorage.saveZones(zones);
+    } catch (error) {
+      console.error('Failed to save to GitHub:', error);
+      return false;
+    }
+  }, [zones]);
+
+  const loadFromGitHub = useCallback(async (): Promise<boolean> => {
+    try {
+      const githubZones = await githubStorage.loadZones();
+      if (githubZones.length > 0) {
+        updateStorageImmediate(githubZones);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to load from GitHub:', error);
+      return false;
+    }
+  }, [updateStorageImmediate]);
   
   return {
     zones,
@@ -438,6 +483,12 @@ export function useZoneState(): UseZoneStateReturn {
     
     // Bulk Operations
     clearAllZones,
-    getZoneStats
+    getZoneStats,
+    
+    // GitHub Storage
+    setGitHubToken,
+    hasGitHubToken,
+    saveToGitHub,
+    loadFromGitHub
   };
 }
