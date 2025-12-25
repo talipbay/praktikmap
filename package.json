@@ -13,8 +13,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "export": "next build",
-    "deploy": "npm run export && touch out/.nojekyll"
+    "export": "next build && touch out/.nojekyll",
+    "deploy": "npm run export"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
